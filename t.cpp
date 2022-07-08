@@ -8,46 +8,46 @@ struct Type {
 	uint8_t t : 3;
 } p[2][3] = {
 	{
-		0x0, 	// 0 0 0 | 0 1 2
-		0x0, 	// 0 0 0 | 3 4 5
-		0x0	// 0 0 0 | 6 7 8
+		0x0,
+		0x0,
+		0x0
 	},
 	{
-		0x0, 	// 0 0 0
-		0x0, 	// 0 0 0
-		0x0	// 0 0 0
+		0x0,
+		0x0,
+		0x0
 	},
 },
 masks[][3] = {
 	{
-		0x7,	// 1 1 1
-		0x0,	// 0 0 0
-		0x0	// 0 0 0 
+		0x7,
+		0x0,
+		0x0
 	},
 	{
-		1 << 2, // 1 0 0 // 1 1 0
-		1 << 2, // 1 0 0 // 1 0 0
-		1 << 2, // 1 0 0 // 1 0 1
+		1 << 2, 
+		1 << 2,
+		1 << 2,
 	},
 	{
-		1,	// 0 0 1
-		1,	// 0 0 1
-		1	// 0 0 1
+		1,
+		1,
+		1
 	},
 	{
-		0,	// 0 0 0
-		0,	// 0 0 0
-		0x7	// 1 1 1
+		0,
+		0,
+		0x7
 	},
 	{
-		1 << 2,	// 1 0 0
-		1 << 1,	// 0 1 0
-		1	// 0 0 1
+		1 << 2,
+		1 << 1,
+		1
 	},
 	{
-		1,	// 0 0 1
-		1 << 1,	// 0 1 0
-		1 << 2	// 1 0 0
+		1,
+		1 << 1,
+		1 << 2
 	}
 };
 
@@ -60,24 +60,23 @@ std::ostream& operator << (std::ostream& os, Type* m)
 	return os;
 }
 
-bool check(Type* m)
+void check(Type* m, bool &winner)
 {
-	Type (*maskp)[6][3];
+	static union {
+		uint16_t mask : 9;
+	};
 
-	for(maskp = &masks; maskp != &masks + 5; maskp++)
-	{
-		if((m[0].t & (*maskp)[0][0].t) && (m[1].t & (*maskp)[0][1].t) && (m[2].t & (*maskp)[0][2].t)) return true;
-	}
+	static union {
+		uint16_t k : 9;
+	};
 
-	return false;
-	/*
-	return std::find_if(masks, masks + 5, [&] (Type *y) {
-			std::cout << (m[0].t & y[0].t) << "\n" << (m[1].t & y[1].t) << "\n" << (m[2].t & y[2].t) << "\nend\n";
-
-			if((m[0].t & y[0].t) && (m[1].t & y[1].t) && (m[2].t & y[2].t)) return true;
-			return false;
+	std::for_each(masks, masks + 5, [&] (Type *y) {
+			mask = (y[0].t & 0x7) | ((y[1].t & 0x7) << 3) | ((y[2].t & 0x7) << 6);
+			
+			k = (m[0].t & 0x7) | ((m[1].t & 0x7) << 3) | ((m[2].t & 0x7) << 6);
+			
+			if(((mask & k) & 0x1FF) == (mask & 0x1FF)) winner = true;
 	});
-	*/
 }
 
 int main()
@@ -89,8 +88,6 @@ int main()
 	bool winner { false }, player { true };
 
 	int answer;
-
-	std::cout << "start" << std::endl;
 
 	while(!winner)
 	{
@@ -110,7 +107,7 @@ int main()
 
 		std::cout << p[player];
 
-		if(check(p[player])) winner = true;
+		check(p[player], winner);
 
 		player = !player;
 	}
